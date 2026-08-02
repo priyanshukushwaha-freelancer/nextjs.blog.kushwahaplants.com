@@ -62,11 +62,18 @@ export default async function CmsDashboardPage() {
 
         <div className="flex gap-3">
           <Link
-            href="/cms/new"
+            href="/cms/new-post"
             className="flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold bg-[var(--primary)] text-[var(--primary-foreground)] hover:bg-[var(--primary-hover)] transition-all shadow-sm"
           >
             <Plus className="h-4 w-4" />
             <span>New Publication</span>
+          </Link>
+          <Link
+            href="/cms/new-plant"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold bg-emerald-600 text-white hover:bg-emerald-700 transition-all shadow-sm"
+          >
+            <Plus className="h-4 w-4" />
+            <span>Catalog Plant</span>
           </Link>
         </div>
       </div>
