@@ -55,7 +55,6 @@ export async function GET() {
   addUrl(`${baseUrl}/plants`, currentDate, 'daily', '0.9');
   addUrl(`${baseUrl}/families`, currentDate, 'weekly', '0.8');
   addUrl(`${baseUrl}/diseases`, currentDate, 'weekly', '0.8');
-  addUrl(`${baseUrl}/uses`, currentDate, 'weekly', '0.8');
   addUrl(`${baseUrl}/blog`, currentDate, 'daily', '0.9');
   addUrl(`${baseUrl}/search`, currentDate, 'monthly', '0.5');
 
@@ -70,17 +69,12 @@ export async function GET() {
     addUrl(`${baseUrl}/blog/${post.slug}`, post.updatedAt.toISOString(), 'weekly', '0.7');
   });
 
-  // Taxonomic families, diseases, actions
   families.forEach((family) => {
     addUrl(`${baseUrl}/families/${family.slug}`, currentDate, 'weekly', '0.6');
   });
 
   diseases.forEach((disease) => {
     addUrl(`${baseUrl}/diseases/${disease.slug}`, currentDate, 'weekly', '0.6');
-  });
-
-  actions.forEach((action) => {
-    addUrl(`${baseUrl}/uses/${action.slug}`, currentDate, 'weekly', '0.6');
   });
 
   xml += `

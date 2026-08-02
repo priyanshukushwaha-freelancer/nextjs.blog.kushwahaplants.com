@@ -42,11 +42,6 @@ export default function Footer() {
                   Diseases & Indications
                 </Link>
               </li>
-              <li>
-                <Link href="/uses" className="hover:text-[var(--foreground)] transition-colors">
-                  Medicinal Actions
-                </Link>
-              </li>
             </ul>
           </div>
 

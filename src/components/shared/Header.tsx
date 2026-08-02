@@ -22,7 +22,6 @@ export default function Header() {
     { name: 'Plants Base', href: '/plants' },
     { name: 'Families', href: '/families' },
     { name: 'Diseases', href: '/diseases' },
-    { name: 'Research', href: '/research' },
     { name: 'Editorial Blog', href: '/blog' },
   ];
 

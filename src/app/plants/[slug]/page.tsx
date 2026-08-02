@@ -311,13 +311,12 @@ export default async function PlantProfilePage({ params }: PageProps) {
                   <span className="text-[var(--muted-foreground)] block">Pharmacological Actions</span>
                   <div className="flex flex-wrap gap-1.5 mt-1">
                     {plant.actions.map(({ action }) => (
-                      <Link
+                      <span
                         key={action.id}
-                        href={`/uses/${action.slug}`}
-                        className="px-2 py-0.5 bg-[var(--ring)]/10 text-[var(--ring)] border border-[var(--ring)]/20 hover:bg-[var(--ring)]/15 rounded text-[10px] font-medium"
+                        className="px-2 py-0.5 bg-[var(--border)]/35 text-[var(--foreground)] rounded text-[10px]"
                       >
                         {action.name}
-                      </Link>
+                      </span>
                     ))}
                   </div>
                 </div>
