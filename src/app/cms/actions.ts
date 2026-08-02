@@ -187,7 +187,7 @@ export async function createPlantAction(prevState: any, formData: FormData) {
           familyId,
           conservation: conservation || null,
           ayurvedicProps: { rasa, guna, virya, vipaka, dosha },
-          videos: videosJson.length > 0 ? videosJson : null,
+          videos: videosJson.length > 0 ? videosJson : undefined,
         },
       });
 
