@@ -25,26 +25,21 @@ function textToTiptapJson(text: string) {
   };
 }
 
-// Process uploaded file and convert to WebP using sharp
+// Process uploaded file and convert to WebP base64 using sharp (Vercel serverless friendly)
 async function saveUploadedImage(file: File, plantName: string): Promise<string | null> {
   if (!file || file.size === 0) return null;
   try {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
     
-    const uploadDir = path.join(process.cwd(), 'public', 'uploads');
-    await fs.mkdir(uploadDir, { recursive: true });
-    
-    const cleanedName = plantName.toLowerCase().replace(/[^a-z0-9]/g, '-');
-    const filename = `${Date.now()}-${cleanedName}.webp`;
-    const filepath = path.join(uploadDir, filename);
+    // Resize and compress to WebP in memory
+    const webpBuffer = await sharp(buffer)
+      .resize({ width: 800, height: 600, fit: 'cover' })
+      .webp({ quality: 80 })
+      .toBuffer();
 
-    // Convert to WebP format with compression
-    await sharp(buffer)
-      .webp({ quality: 85 })
-      .toFile(filepath);
-
-    return `/uploads/${filename}`;
+    const base64 = webpBuffer.toString('base64');
+    return `data:image/webp;base64,${base64}`;
   } catch (err) {
     console.error('⚠️ WebP conversion failed:', err);
     return null;
