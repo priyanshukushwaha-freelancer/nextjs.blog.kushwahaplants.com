@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import prisma from '@/lib/prisma';
 import Breadcrumbs from '@/components/shared/Breadcrumbs';
 import Link from 'next/link';
-import { Leaf } from 'lucide-react';
+import { Leaf, ShieldAlert } from 'lucide-react';
 
 export const revalidate = 86400;
 
@@ -13,9 +13,14 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const resolvedParams = await params;
-  const family = await prisma.family.findUnique({
-    where: { slug: resolvedParams.slug },
-  });
+  let family = null;
+  try {
+    family = await prisma.family.findUnique({
+      where: { slug: resolvedParams.slug },
+    });
+  } catch (e) {
+    // fallback
+  }
 
   if (!family) return {};
 
@@ -27,21 +32,43 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function FamilyPage({ params }: PageProps) {
   const resolvedParams = await params;
-  const family = await prisma.family.findUnique({
-    where: { slug: resolvedParams.slug },
-    include: {
-      plants: {
-        select: {
-          id: true,
-          slug: true,
-          englishName: true,
-          scientificName: true,
-          sanskritName: true,
-          hindiName: true,
+  let family = null;
+  let connectionError = false;
+
+  try {
+    family = await prisma.family.findUnique({
+      where: { slug: resolvedParams.slug },
+      include: {
+        plants: {
+          select: {
+            id: true,
+            slug: true,
+            englishName: true,
+            scientificName: true,
+            sanskritName: true,
+            hindiName: true,
+          },
         },
       },
-    },
-  });
+    });
+  } catch (error) {
+    console.error('Database connection error in family details page:', error);
+    connectionError = true;
+  }
+
+  if (connectionError) {
+    return (
+      <div className="mx-auto w-full max-w-xl px-6 py-20 text-center font-sans space-y-4">
+        <div className="h-12 w-12 rounded-full bg-red-500/10 text-red-500 flex items-center justify-center mx-auto">
+          <ShieldAlert className="h-6 w-6" />
+        </div>
+        <h1 className="text-lg font-semibold text-[var(--foreground)]">Botanical Base is Temporarily Busy</h1>
+        <p className="text-xs text-[var(--muted-foreground)] leading-relaxed max-w-sm mx-auto">
+          Our botanical database is experiencing a high volume of concurrent connection requests. Please reload the page to refresh the catalog data.
+        </p>
+      </div>
+    );
+  }
 
   if (!family) notFound();
 

@@ -142,3 +142,37 @@ export async function getConnectedEntitiesSummary(plantId: string) {
 
   return { diseases, actions, parts, research };
 }
+
+export async function getCachedPlantBySlug(slug: string) {
+  const cacheKey = `plant:profile:${slug}`;
+  try {
+    const cached = await redis.get(cacheKey);
+    if (cached) return JSON.parse(cached);
+  } catch (err) {
+    console.warn('⚠️ Cache get error:', err);
+  }
+
+  const plant = await prisma.plant.findUnique({
+    where: { slug },
+    include: {
+      family: true,
+      parts: { include: { part: true } },
+      diseases: { include: { disease: true } },
+      actions: { include: { action: true } },
+      research: true,
+      faqs: true,
+      references: true,
+      images: { select: { url: true, altText: true } },
+    },
+  });
+
+  if (plant) {
+    try {
+      await redis.set(cacheKey, JSON.stringify(plant), 'EX', 86400); // 24 hours cache
+    } catch (err) {
+      console.warn('⚠️ Cache set error:', err);
+    }
+  }
+
+  return plant;
+}

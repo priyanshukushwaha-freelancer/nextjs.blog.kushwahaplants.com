@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import prisma from '@/lib/prisma';
-import { getPlantGraphData } from '@/services/graph';
+import { getPlantGraphData, getCachedPlantBySlug } from '@/services/graph';
 import KnowledgeGraph from '@/components/botanical/KnowledgeGraph';
 import Breadcrumbs from '@/components/shared/Breadcrumbs';
 import { Leaf, FileText, Bookmark, HelpCircle, ShieldAlert } from 'lucide-react';
@@ -16,10 +16,12 @@ interface PageProps {
 // 1. Dynamic SEO Metadata Generation
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const resolvedParams = await params;
-  const plant = await prisma.plant.findUnique({
-    where: { slug: resolvedParams.slug },
-    include: { family: true },
-  });
+  let plant = null;
+  try {
+    plant = await getCachedPlantBySlug(resolvedParams.slug);
+  } catch (e) {
+    // fallback
+  }
 
   if (!plant) return {};
 
@@ -44,18 +46,29 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function PlantProfilePage({ params }: PageProps) {
   const resolvedParams = await params;
-  const plant = await prisma.plant.findUnique({
-    where: { slug: resolvedParams.slug },
-    include: {
-      family: true,
-      parts: { include: { part: true } },
-      diseases: { include: { disease: true } },
-      actions: { include: { action: true } },
-      research: true,
-      faqs: true,
-      references: true,
-    },
-  });
+  let plant = null;
+  let connectionError = false;
+
+  try {
+    plant = await getCachedPlantBySlug(resolvedParams.slug);
+  } catch (error) {
+    console.error('Database connection error in plant details page:', error);
+    connectionError = true;
+  }
+
+  if (connectionError) {
+    return (
+      <div className="mx-auto w-full max-w-xl px-6 py-20 text-center font-sans space-y-4">
+        <div className="h-12 w-12 rounded-full bg-red-500/10 text-red-500 flex items-center justify-center mx-auto">
+          <ShieldAlert className="h-6 w-6" />
+        </div>
+        <h1 className="text-lg font-semibold text-[var(--foreground)]">Botanical Base is Temporarily Busy</h1>
+        <p className="text-xs text-[var(--muted-foreground)] leading-relaxed max-w-sm mx-auto">
+          Our botanical database is experiencing a high volume of concurrent connection requests. Please reload the page to refresh the catalog data.
+        </p>
+      </div>
+    );
+  }
 
   if (!plant) notFound();
 
