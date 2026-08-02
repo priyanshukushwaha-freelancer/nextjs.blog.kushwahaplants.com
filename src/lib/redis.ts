@@ -15,6 +15,7 @@ if (redisUrl && redisUrl.startsWith('redis://')) {
       maxRetriesPerRequest: 1,
       connectTimeout: 2000,
       lazyConnect: true, // Don't block startup
+      enableOfflineQueue: false,
     });
 
     client.on('error', (err) => {
