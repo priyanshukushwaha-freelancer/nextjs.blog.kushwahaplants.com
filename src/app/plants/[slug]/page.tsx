@@ -200,7 +200,7 @@ export default async function PlantProfilePage({ params }: PageProps) {
                 Scientific Research & Clinical Studies
               </h2>
               <div className="space-y-4">
-                {plant.research.map((paper) => (
+                {plant.research.map((paper: any) => (
                   <div key={paper.id} className="p-5 rounded-xl border border-[var(--border)] bg-[var(--card)] space-y-2">
                     <div className="flex items-start justify-between gap-4">
                       <h3 className="font-sans font-semibold text-sm text-[var(--foreground)]">
@@ -240,7 +240,7 @@ export default async function PlantProfilePage({ params }: PageProps) {
                 Footnotes & Classical Citations
               </h2>
               <ol className="list-decimal list-inside text-xs text-[var(--muted-foreground)] space-y-1.5 pl-2">
-                {plant.references.map((ref) => (
+                {plant.references.map((ref: any) => (
                   <li key={ref.id} className="leading-relaxed">
                     <span className="font-semibold text-[var(--foreground)]">[{ref.citationKey}]</span> {ref.citationText}
                     {ref.url && (
@@ -262,7 +262,7 @@ export default async function PlantProfilePage({ params }: PageProps) {
                 Frequently Asked Questions
               </h2>
               <div className="space-y-4">
-                {plant.faqs.map((faq) => (
+                {plant.faqs.map((faq: any) => (
                   <div key={faq.id} className="space-y-1.5">
                     <h4 className="font-sans font-semibold text-sm text-[var(--foreground)]">
                       {faq.question}
@@ -340,7 +340,7 @@ export default async function PlantProfilePage({ params }: PageProps) {
                 <div>
                   <span className="text-[var(--muted-foreground)] block">Parts Utilized</span>
                   <div className="flex flex-wrap gap-1.5 mt-1">
-                    {plant.parts.map(({ part }) => (
+                    {plant.parts.map(({ part }: any) => (
                       <span key={part.id} className="px-2 py-0.5 bg-[var(--border)]/35 text-[var(--foreground)] rounded text-[10px]">
                         {part.name}
                       </span>
@@ -352,7 +352,7 @@ export default async function PlantProfilePage({ params }: PageProps) {
                 <div>
                   <span className="text-[var(--muted-foreground)] block">Target Indications</span>
                   <div className="flex flex-wrap gap-1.5 mt-1">
-                    {plant.diseases.map(({ disease }) => (
+                    {plant.diseases.map(({ disease }: any) => (
                       <Link
                         key={disease.id}
                         href={`/diseases/${disease.slug}`}
@@ -368,7 +368,7 @@ export default async function PlantProfilePage({ params }: PageProps) {
                 <div>
                   <span className="text-[var(--muted-foreground)] block">Pharmacological Actions</span>
                   <div className="flex flex-wrap gap-1.5 mt-1">
-                    {plant.actions.map(({ action }) => (
+                    {plant.actions.map(({ action }: any) => (
                       <span
                         key={action.id}
                         className="px-2 py-0.5 bg-[var(--border)]/35 text-[var(--foreground)] rounded text-[10px]"
