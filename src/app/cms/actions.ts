@@ -189,7 +189,22 @@ export async function createPlantAction(prevState: any, formData: FormData) {
         });
       }
 
-      // 5. Log activity
+      // 5. Create Image if URL is provided
+      const imageUrl = formData.get('imageUrl') as string;
+      const imageAlt = formData.get('imageAlt') as string;
+      if (imageUrl) {
+        await tx.image.create({
+          data: {
+            url: imageUrl,
+            altText: imageAlt || `${englishName} medicinal plant`,
+            width: 800,
+            height: 600,
+            plantId: plant.id,
+          },
+        });
+      }
+
+      // 6. Log activity
       await tx.auditLog.create({
         data: {
           userId: userId,

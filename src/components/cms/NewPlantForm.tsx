@@ -128,6 +128,28 @@ export default function NewPlantForm({ families, parts, diseases, actions }: New
                 className="w-full px-4 py-2 text-sm rounded-xl border border-[var(--border)] bg-[var(--background)] focus:outline-none focus:border-[var(--ring)]"
               />
             </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-[var(--foreground)]">Image URL (Cloudinary / CDN)</label>
+                <input
+                  type="url"
+                  name="imageUrl"
+                  placeholder="https://res.cloudinary.com/..."
+                  className="w-full px-4 py-2 text-sm rounded-xl border border-[var(--border)] bg-[var(--background)] focus:outline-none focus:border-[var(--ring)]"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-[var(--foreground)]">Image Alt Text (SEO)</label>
+                <input
+                  type="text"
+                  name="imageAlt"
+                  placeholder="e.g. Tulsi plant leaves"
+                  className="w-full px-4 py-2 text-sm rounded-xl border border-[var(--border)] bg-[var(--background)] focus:outline-none focus:border-[var(--ring)]"
+                />
+              </div>
+            </div>
           </div>
 
           {/* Description */}
