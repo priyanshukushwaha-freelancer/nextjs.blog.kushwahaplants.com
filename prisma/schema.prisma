@@ -1,0 +1,219 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["fullTextSearchPostgres"]
+}
+
+enum Role {
+  SUPERADMIN
+  EDITOR
+  AUTHOR
+}
+
+enum PublishStatus {
+  DRAFT
+  REVIEW
+  PUBLISHED
+  ARCHIVED
+}
+
+model User {
+  id            String      @id @default(cuid())
+  name          String?
+  email         String      @unique
+  emailVerified DateTime?
+  image         String?
+  passwordHash  String?
+  role          Role        @default(AUTHOR)
+  posts         Post[]
+  auditLogs     AuditLog[]
+  revisions     Revision[]
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+}
+
+// BOTANICAL KNOWLEDGE GRAPH MODELS
+model Plant {
+  id              String             @id @default(cuid())
+  slug            String             @unique
+  scientificName  String             @unique // Binomial nomenclature (e.g. Ocimum tenuiflorum)
+  englishName     String
+  hindiName       String?
+  sanskritName    String?
+  familyId        String
+  family          Family             @relation(fields: [familyId], references: [id])
+  description     String             @db.Text
+  ayurvedicProps  Json?              // { rasa: [], guna: [], virya: [], vipaka: [], dosha: [] }
+  conservation    String?            // IUCN status
+  images          Image[]
+  parts           PlantPartToPlant[]
+  diseases        DiseaseToPlant[]
+  actions         ActionToPlant[]
+  research        Research[]
+  posts           PostToPlant[]
+  faqs            Faq[]
+  references      Reference[]
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  @@index([scientificName])
+  @@index([englishName])
+  @@index([sanskritName])
+  @@index([hindiName])
+}
+
+model Family {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String   @unique // e.g. Lamiaceae
+  description String   @db.Text
+  plants      Plant[]
+  createdAt   DateTime @default(now())
+}
+
+model PlantPart {
+  id          String             @id @default(cuid())
+  slug        String             @unique
+  name        String             @unique // Leaves, Roots, Seeds, Bark
+  description String?            @db.Text
+  plants      PlantPartToPlant[]
+}
+
+model PlantPartToPlant {
+  plantId     String
+  plantPartId String
+  plant       Plant     @relation(fields: [plantId], references: [id], onDelete: Cascade)
+  part        PlantPart @relation(fields: [plantPartId], references: [id], onDelete: Cascade)
+
+  @@id([plantId, plantPartId])
+}
+
+model Disease {
+  id          String           @id @default(cuid())
+  slug        String           @unique
+  name        String           @unique // e.g. Diabetes, Hypertension
+  description String           @db.Text
+  plants      DiseaseToPlant[]
+}
+
+model DiseaseToPlant {
+  plantId   String
+  diseaseId String
+  plant     Plant   @relation(fields: [plantId], references: [id], onDelete: Cascade)
+  disease   Disease @relation(fields: [diseaseId], references: [id], onDelete: Cascade)
+
+  @@id([plantId, diseaseId])
+}
+
+model MedicinalAction {
+  id          String          @id @default(cuid())
+  slug        String          @unique
+  name        String          @unique // e.g. Anti-inflammatory, Antioxidant
+  description String          @db.Text
+  plants      ActionToPlant[]
+}
+
+model ActionToPlant {
+  plantId          String
+  medicinalActionId String
+  plant            Plant           @relation(fields: [plantId], references: [id], onDelete: Cascade)
+  action           MedicinalAction @relation(fields: [medicinalActionId], references: [id], onDelete: Cascade)
+
+  @@id([plantId, medicinalActionId])
+}
+
+model Research {
+  id        String   @id @default(cuid())
+  title     String
+  authors   String
+  journal   String
+  year      Int
+  doi       String?  @unique
+  url       String?
+  abstract  String?  @db.Text
+  plantId   String
+  plant     Plant    @relation(fields: [plantId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+}
+
+// EDITORIAL & PUBLISHING CMS
+model Post {
+  id          String        @id @default(cuid())
+  slug        String        @unique
+  title       String
+  excerpt     String        @db.Text
+  content     Json          // Structured Tiptap JSON blocks
+  status      PublishStatus @default(DRAFT)
+  authorId    String
+  author      User          @relation(fields: [authorId], references: [id])
+  seoTitle    String?
+  seoDesc     String?
+  schemaType  String        @default("Article")
+  plants      PostToPlant[]
+  revisions   Revision[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+}
+
+model PostToPlant {
+  postId  String
+  plantId String
+  post    Post  @relation(fields: [postId], references: [id], onDelete: Cascade)
+  plant   Plant @relation(fields: [plantId], references: [id], onDelete: Cascade)
+
+  @@id([postId, plantId])
+}
+
+model Image {
+  id          String   @id @default(cuid())
+  url         String
+  altText     String
+  blurHash    String?
+  width       Int
+  height      Int
+  plantId     String?
+  plant       Plant?   @relation(fields: [plantId], references: [id], onDelete: SetNull)
+  createdAt   DateTime @default(now())
+}
+
+model Faq {
+  id        String   @id @default(cuid())
+  question  String
+  answer    String   @db.Text
+  plantId   String
+  plant     Plant    @relation(fields: [plantId], references: [id], onDelete: Cascade)
+}
+
+model Reference {
+  id          String  @id @default(cuid())
+  citationKey String  // e.g. [1], [Kushwaha2026]
+  citationText String @db.Text
+  url         String?
+  plantId     String
+  plant       Plant   @relation(fields: [plantId], references: [id], onDelete: Cascade)
+}
+
+// AUDITING & REVISION MANAGEMENT
+model Revision {
+  id        String   @id @default(cuid())
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  editorId  String
+  editor    User     @relation(fields: [editorId], references: [id])
+  content   Json
+  createdAt DateTime @default(now())
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  action    String   // e.g. "CREATE_PLANT", "PUBLISH_POST"
+  targetId  String
+  details   String?  @db.Text
+  createdAt DateTime @default(now())
+}
