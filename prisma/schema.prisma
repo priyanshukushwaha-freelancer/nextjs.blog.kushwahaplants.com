@@ -57,6 +57,7 @@ model Plant {
   posts           PostToPlant[]
   faqs            Faq[]
   references      Reference[]
+  videos          Json?              // [ { "url": "...", "title": "..." } ]
   createdAt       DateTime           @default(now())
   updatedAt       DateTime           @updatedAt
 

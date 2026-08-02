@@ -262,6 +262,51 @@ export default async function PlantProfilePage({ params }: PageProps) {
               </div>
             </section>
           )}
+
+          {/* YouTube Video Embeds */}
+          {plant.videos && Array.isArray(plant.videos) && plant.videos.length > 0 && (
+            <section className="space-y-4 pt-4">
+              <h2 className="font-sans text-sm font-semibold tracking-tight text-[var(--foreground)] flex items-center gap-1.5 border-b border-[var(--border)]/35 pb-2">
+                <FileText className="h-4 w-4 text-red-500" />
+                Video Guides & Identification
+              </h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {(plant.videos as Array<{ url: string; title: string }>).map((video, idx) => {
+                  let videoId = '';
+                  try {
+                    const urlObj = new URL(video.url);
+                    if (urlObj.hostname === 'youtu.be') {
+                      videoId = urlObj.pathname.slice(1);
+                    } else if (urlObj.searchParams.has('v')) {
+                      videoId = urlObj.searchParams.get('v') || '';
+                    } else if (urlObj.pathname.startsWith('/embed/')) {
+                      videoId = urlObj.pathname.split('/')[2];
+                    }
+                  } catch (e) {
+                    const match = video.url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i);
+                    if (match) videoId = match[1];
+                  }
+                  
+                  if (!videoId) return null;
+                  
+                  return (
+                    <div key={idx} className="space-y-2">
+                      <div className="relative aspect-video rounded-xl overflow-hidden border border-[var(--border)] bg-black">
+                        <iframe
+                          src={`https://www.youtube.com/embed/${videoId}`}
+                          title={video.title}
+                          className="absolute inset-0 w-full h-full border-0"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          allowFullScreen
+                        />
+                      </div>
+                      <h4 className="text-[11px] font-semibold text-[var(--foreground)] line-clamp-1">{video.title}</h4>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          )}
         </div>
 
         {/* Sidebar Knowledge Graph */}
@@ -321,6 +366,26 @@ export default async function PlantProfilePage({ params }: PageProps) {
                   </div>
                 </div>
               )}
+            </div>
+          </div>
+
+          {/* EEAT Author Profile */}
+          <div className="border border-[var(--border)] rounded-2xl bg-[var(--card)] p-6 space-y-4">
+            <h3 className="font-sans text-xs font-semibold uppercase tracking-wider text-[var(--foreground)]">Botanical Authority</h3>
+            <div className="space-y-3">
+              <div className="space-y-1">
+                <h4 className="font-sans font-semibold text-xs text-[var(--foreground)]">Mahesh Kumar Kushwaha</h4>
+                <p className="text-[10px] text-[var(--muted-foreground)]">Founder, Kushwaha Herbs and Plants</p>
+              </div>
+              <p className="text-[10px] text-[var(--muted-foreground)] leading-relaxed">
+                Medicinal plant educator and researcher with over a decade documenting India&apos;s flora, cultivating 250+ species, and educating a 1.91 Lakh+ subscriber community.
+              </p>
+              <Link
+                href="/about"
+                className="inline-flex items-center text-[10px] font-semibold text-[var(--ring)] hover:underline"
+              >
+                Read full profile & credentials →
+              </Link>
             </div>
           </div>
         </div>

@@ -60,7 +60,7 @@ export default async function CmsDashboardPage() {
           </p>
         </div>
 
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-3">
           <Link
             href="/cms/new-post"
             className="flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold bg-[var(--primary)] text-[var(--primary-foreground)] hover:bg-[var(--primary-hover)] transition-all shadow-sm"
@@ -74,6 +74,20 @@ export default async function CmsDashboardPage() {
           >
             <Plus className="h-4 w-4" />
             <span>Catalog Plant</span>
+          </Link>
+          <Link
+            href="/cms/new-family"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold bg-blue-600 text-white hover:bg-blue-750 transition-all shadow-sm"
+          >
+            <Plus className="h-4 w-4" />
+            <span>Add Family</span>
+          </Link>
+          <Link
+            href="/cms/new-disease"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold bg-purple-600 text-white hover:bg-purple-750 transition-all shadow-sm"
+          >
+            <Plus className="h-4 w-4" />
+            <span>Add Indication</span>
           </Link>
         </div>
       </div>

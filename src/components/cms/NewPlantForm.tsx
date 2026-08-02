@@ -31,7 +31,7 @@ export default function NewPlantForm({ families, parts, diseases, actions }: New
   };
 
   return (
-    <form action={formAction} className="space-y-8 max-w-4xl font-sans">
+    <form action={formAction} encType="multipart/form-data" className="space-y-8 max-w-4xl font-sans">
       <div className="flex items-center gap-4">
         <Link
           href="/cms"
@@ -131,7 +131,17 @@ export default function NewPlantForm({ families, parts, diseases, actions }: New
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-[var(--foreground)]">Image URL (Cloudinary / CDN)</label>
+                <label className="text-xs font-semibold text-[var(--foreground)]">Upload Image from System (WebP Auto)</label>
+                <input
+                  type="file"
+                  name="imageFile"
+                  accept="image/*"
+                  className="w-full px-4 py-1.5 text-xs rounded-xl border border-[var(--border)] bg-[var(--background)] focus:outline-none focus:border-[var(--ring)]"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-[var(--foreground)]">Or Image URL (Fallback)</label>
                 <input
                   type="url"
                   name="imageUrl"
@@ -139,16 +149,16 @@ export default function NewPlantForm({ families, parts, diseases, actions }: New
                   className="w-full px-4 py-2 text-sm rounded-xl border border-[var(--border)] bg-[var(--background)] focus:outline-none focus:border-[var(--ring)]"
                 />
               </div>
+            </div>
 
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-[var(--foreground)]">Image Alt Text (SEO)</label>
-                <input
-                  type="text"
-                  name="imageAlt"
-                  placeholder="e.g. Tulsi plant leaves"
-                  className="w-full px-4 py-2 text-sm rounded-xl border border-[var(--border)] bg-[var(--background)] focus:outline-none focus:border-[var(--ring)]"
-                />
-              </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-[var(--foreground)]">Image Alt Text (SEO)</label>
+              <input
+                type="text"
+                name="imageAlt"
+                placeholder="e.g. Tulsi plant leaves"
+                className="w-full px-4 py-2 text-sm rounded-xl border border-[var(--border)] bg-[var(--background)] focus:outline-none focus:border-[var(--ring)]"
+              />
             </div>
           </div>
 
@@ -223,6 +233,109 @@ export default function NewPlantForm({ families, parts, diseases, actions }: New
                   name="dosha"
                   placeholder="Vata-Kapha Hara, Pitta Vardhana"
                   className="w-full px-3 py-1.5 text-xs rounded-xl border border-[var(--border)] bg-[var(--background)] focus:outline-none"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* YouTube Videos */}
+          <div className="p-6 rounded-2xl border border-[var(--border)] bg-[var(--card)] space-y-4">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-[var(--foreground)]">YouTube Educational Videos</h3>
+            <p className="text-[10px] text-[var(--muted-foreground)] -mt-2">Provide YouTube video URLs and titles to embed on this plant profile.</p>
+            
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-semibold text-[var(--foreground)]">Video 1 URL</label>
+                  <input
+                    type="url"
+                    name="youtubeUrls"
+                    placeholder="https://www.youtube.com/watch?v=..."
+                    className="w-full px-3 py-1.5 text-xs rounded-xl border border-[var(--border)] bg-[var(--background)] focus:outline-none"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-semibold text-[var(--foreground)]">Video 1 Title</label>
+                  <input
+                    type="text"
+                    name="youtubeTitles"
+                    placeholder="e.g. Identify Real Tulsi Species"
+                    className="w-full px-3 py-1.5 text-xs rounded-xl border border-[var(--border)] bg-[var(--background)] focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-semibold text-[var(--foreground)]">Video 2 URL</label>
+                  <input
+                    type="url"
+                    name="youtubeUrls"
+                    placeholder="https://www.youtube.com/watch?v=..."
+                    className="w-full px-3 py-1.5 text-xs rounded-xl border border-[var(--border)] bg-[var(--background)] focus:outline-none"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-semibold text-[var(--foreground)]">Video 2 Title</label>
+                  <input
+                    type="text"
+                    name="youtubeTitles"
+                    placeholder="e.g. How to Cultivate Neem"
+                    className="w-full px-3 py-1.5 text-xs rounded-xl border border-[var(--border)] bg-[var(--background)] focus:outline-none"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Plant FAQs */}
+          <div className="p-6 rounded-2xl border border-[var(--border)] bg-[var(--card)] space-y-4">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-[var(--foreground)]">Botanical & Medical FAQs</h3>
+            <p className="text-[10px] text-[var(--muted-foreground)] -mt-2">Add frequently asked questions to maximize Google Search Snippets and AI rankings.</p>
+
+            <div className="space-y-4">
+              <div className="space-y-2 border-b border-[var(--border)]/35 pb-4">
+                <input
+                  type="text"
+                  name="faqQuestions"
+                  placeholder="FAQ 1: Question (e.g. Can Tulsi be consumed daily?)"
+                  className="w-full px-3 py-1.5 text-xs rounded-xl border border-[var(--border)] bg-[var(--background)] font-semibold focus:outline-none"
+                />
+                <textarea
+                  name="faqAnswers"
+                  rows={2}
+                  placeholder="FAQ 1: Answer..."
+                  className="w-full px-3 py-1.5 text-xs rounded-xl border border-[var(--border)] bg-[var(--background)] focus:outline-none resize-none"
+                />
+              </div>
+
+              <div className="space-y-2 border-b border-[var(--border)]/35 pb-4">
+                <input
+                  type="text"
+                  name="faqQuestions"
+                  placeholder="FAQ 2: Question (e.g. What are the side effects of Neem?)"
+                  className="w-full px-3 py-1.5 text-xs rounded-xl border border-[var(--border)] bg-[var(--background)] font-semibold focus:outline-none"
+                />
+                <textarea
+                  name="faqAnswers"
+                  rows={2}
+                  placeholder="FAQ 2: Answer..."
+                  className="w-full px-3 py-1.5 text-xs rounded-xl border border-[var(--border)] bg-[var(--background)] focus:outline-none resize-none"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <input
+                  type="text"
+                  name="faqQuestions"
+                  placeholder="FAQ 3: Question"
+                  className="w-full px-3 py-1.5 text-xs rounded-xl border border-[var(--border)] bg-[var(--background)] font-semibold focus:outline-none"
+                />
+                <textarea
+                  name="faqAnswers"
+                  rows={2}
+                  placeholder="FAQ 3: Answer..."
+                  className="w-full px-3 py-1.5 text-xs rounded-xl border border-[var(--border)] bg-[var(--background)] focus:outline-none resize-none"
                 />
               </div>
             </div>

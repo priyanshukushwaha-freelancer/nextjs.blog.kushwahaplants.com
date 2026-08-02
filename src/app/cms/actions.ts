@@ -4,8 +4,11 @@ import prisma from '@/lib/prisma';
 import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
 import { PublishStatus } from '@prisma/client';
+import sharp from 'sharp';
+import { promises as fs } from 'fs';
+import path from 'path';
 
-// Convert plain text into a structured Tiptap JSON document structure
+// Convert plain text into structured Tiptap JSON blocks
 function textToTiptapJson(text: string) {
   const paragraphs = text.split('\n').filter((p) => p.trim() !== '');
   return {
@@ -22,6 +25,33 @@ function textToTiptapJson(text: string) {
   };
 }
 
+// Process uploaded file and convert to WebP using sharp
+async function saveUploadedImage(file: File, plantName: string): Promise<string | null> {
+  if (!file || file.size === 0) return null;
+  try {
+    const bytes = await file.arrayBuffer();
+    const buffer = Buffer.from(bytes);
+    
+    const uploadDir = path.join(process.cwd(), 'public', 'uploads');
+    await fs.mkdir(uploadDir, { recursive: true });
+    
+    const cleanedName = plantName.toLowerCase().replace(/[^a-z0-9]/g, '-');
+    const filename = `${Date.now()}-${cleanedName}.webp`;
+    const filepath = path.join(uploadDir, filename);
+
+    // Convert to WebP format with compression
+    await sharp(buffer)
+      .webp({ quality: 85 })
+      .toFile(filepath);
+
+    return `/uploads/${filename}`;
+  } catch (err) {
+    console.error('⚠️ WebP conversion failed:', err);
+    return null;
+  }
+}
+
+// 1. Create Publication/Post Action
 export async function createPostAction(prevState: any, formData: FormData) {
   const session = await auth();
   const userId = session?.user?.id;
@@ -36,7 +66,7 @@ export async function createPostAction(prevState: any, formData: FormData) {
   const status = formData.get('status') as PublishStatus;
   const seoTitle = formData.get('seoTitle') as string;
   const seoDesc = formData.get('seoDesc') as string;
-  const selectedPlants = formData.getAll('plants') as string[]; // plant IDs
+  const selectedPlants = formData.getAll('plants') as string[];
 
   if (!title || !slug || !excerpt || !rawContent) {
     return { error: 'Please fill in all required fields.' };
@@ -48,8 +78,7 @@ export async function createPostAction(prevState: any, formData: FormData) {
       return { error: 'A publication with this slug already exists.' };
     }
 
-    const post = await prisma.$transaction(async (tx) => {
-      // 1. Create the Post
+    await prisma.$transaction(async (tx) => {
       const newPost = await tx.post.create({
         data: {
           title,
@@ -63,7 +92,6 @@ export async function createPostAction(prevState: any, formData: FormData) {
         },
       });
 
-      // 2. Connect related plants
       if (selectedPlants.length > 0) {
         await tx.postToPlant.createMany({
           data: selectedPlants.map((plantId) => ({
@@ -73,27 +101,25 @@ export async function createPostAction(prevState: any, formData: FormData) {
         });
       }
 
-      // 3. Log the audit activity
       await tx.auditLog.create({
         data: {
           userId: userId,
           action: 'CREATE_POST',
           targetId: newPost.id,
-          details: `Created post: "${title}" in status ${status}`,
+          details: `Created post: "${title}"`,
         },
       });
-
-      return newPost;
     });
 
   } catch (error: any) {
-    console.error('Error creating post:', error);
-    return { error: error.message || 'Failed to create post. Database error.' };
+    console.error(error);
+    return { error: error.message || 'Failed to create post.' };
   }
 
   redirect('/cms');
 }
 
+// 2. Create Plant Profile Action (including local WebP upload, YouTube links, and FAQs)
 export async function createPlantAction(prevState: any, formData: FormData) {
   const session = await auth();
   const userId = session?.user?.id;
@@ -110,17 +136,33 @@ export async function createPlantAction(prevState: any, formData: FormData) {
   const familyId = formData.get('familyId') as string;
   const conservation = formData.get('conservation') as string;
 
-  // Ayurvedic Properties (Rasa, Guna, Virya, Vipaka, Dosha)
+  // YouTube Videos (parse links)
+  const ytUrls = formData.getAll('youtubeUrls') as string[];
+  const ytTitles = formData.getAll('youtubeTitles') as string[];
+  const videosJson = ytUrls
+    .map((url, i) => ({ url, title: ytTitles[i] || 'YouTube Video' }))
+    .filter((v) => v.url.trim() !== '');
+
+  // FAQs
+  const faqQs = formData.getAll('faqQuestions') as string[];
+  const faqAs = formData.getAll('faqAnswers') as string[];
+  const faqsList = faqQs
+    .map((q, i) => ({ question: q, answer: faqAs[i] || '' }))
+    .filter((f) => f.question.trim() !== '' && f.answer.trim() !== '');
+
+  // Ayurvedic Props
   const rasa = (formData.get('rasa') as string)?.split(',').map((x) => x.trim()).filter(Boolean) || [];
   const guna = (formData.get('guna') as string)?.split(',').map((x) => x.trim()).filter(Boolean) || [];
   const virya = (formData.get('virya') as string)?.split(',').map((x) => x.trim()).filter(Boolean) || [];
   const vipaka = (formData.get('vipaka') as string)?.split(',').map((x) => x.trim()).filter(Boolean) || [];
   const dosha = (formData.get('dosha') as string)?.split(',').map((x) => x.trim()).filter(Boolean) || [];
 
-  // Related IDs
   const parts = formData.getAll('parts') as string[];
   const diseases = formData.getAll('diseases') as string[];
   const actions = formData.getAll('actions') as string[];
+
+  // Image Upload File
+  const imageFile = formData.get('imageFile') as File;
 
   if (!englishName || !scientificName || !slug || !description || !familyId) {
     return { error: 'Please fill in all required fields.' };
@@ -132,13 +174,8 @@ export async function createPlantAction(prevState: any, formData: FormData) {
       return { error: 'A plant profile with this slug already exists.' };
     }
 
-    const scientificExists = await prisma.plant.findUnique({ where: { scientificName } });
-    if (scientificExists) {
-      return { error: 'A plant with this scientific name already exists.' };
-    }
-
     await prisma.$transaction(async (tx) => {
-      // 1. Create the Plant Node
+      // Create Plant
       const plant = await tx.plant.create({
         data: {
           englishName,
@@ -149,75 +186,128 @@ export async function createPlantAction(prevState: any, formData: FormData) {
           description,
           familyId,
           conservation: conservation || null,
-          ayurvedicProps: {
-            rasa,
-            guna,
-            virya,
-            vipaka,
-            dosha,
-          },
+          ayurvedicProps: { rasa, guna, virya, vipaka, dosha },
+          videos: videosJson.length > 0 ? videosJson : null,
         },
       });
 
-      // 2. Connect parts
+      // Save uploaded image in WebP format
+      if (imageFile && imageFile.size > 0) {
+        const savedPath = await saveUploadedImage(imageFile, englishName);
+        if (savedPath) {
+          await tx.image.create({
+            data: {
+              url: savedPath,
+              altText: `${englishName} botanical plant profile illustration`,
+              width: 800,
+              height: 600,
+              plantId: plant.id,
+            },
+          });
+        }
+      }
+
+      // Connect parts, indications, actions
       if (parts.length > 0) {
         await tx.plantPartToPlant.createMany({
-          data: parts.map((partId) => ({
-            plantId: plant.id,
-            plantPartId: partId,
-          })),
+          data: parts.map((partId) => ({ plantId: plant.id, plantPartId: partId })),
         });
       }
-
-      // 3. Connect indications
       if (diseases.length > 0) {
         await tx.diseaseToPlant.createMany({
-          data: diseases.map((diseaseId) => ({
-            plantId: plant.id,
-            diseaseId,
-          })),
+          data: diseases.map((diseaseId) => ({ plantId: plant.id, diseaseId })),
         });
       }
-
-      // 4. Connect pharmacological actions
       if (actions.length > 0) {
         await tx.actionToPlant.createMany({
-          data: actions.map((actionId) => ({
+          data: actions.map((actionId) => ({ plantId: plant.id, medicinalActionId: actionId })),
+        });
+      }
+
+      // Save FAQs
+      if (faqsList.length > 0) {
+        await tx.faq.createMany({
+          data: faqsList.map((f) => ({
+            question: f.question,
+            answer: f.answer,
             plantId: plant.id,
-            medicinalActionId: actionId,
           })),
         });
       }
 
-      // 5. Create Image if URL is provided
-      const imageUrl = formData.get('imageUrl') as string;
-      const imageAlt = formData.get('imageAlt') as string;
-      if (imageUrl) {
-        await tx.image.create({
-          data: {
-            url: imageUrl,
-            altText: imageAlt || `${englishName} medicinal plant`,
-            width: 800,
-            height: 600,
-            plantId: plant.id,
-          },
-        });
-      }
-
-      // 6. Log activity
       await tx.auditLog.create({
         data: {
           userId: userId,
           action: 'CREATE_PLANT',
           targetId: plant.id,
-          details: `Created plant profile: "${englishName}" (${scientificName})`,
+          details: `Created plant: "${englishName}"`,
         },
       });
     });
 
   } catch (error: any) {
-    console.error('Error creating plant:', error);
+    console.error(error);
     return { error: error.message || 'Failed to create plant profile.' };
+  }
+
+  redirect('/cms');
+}
+
+// 3. Create Taxonomic Family Action
+export async function createFamilyAction(prevState: any, formData: FormData) {
+  const session = await auth();
+  const userId = session?.user?.id;
+  if (!userId) {
+    return { error: 'Unauthorized. Please sign in.' };
+  }
+
+  const name = formData.get('name') as string;
+  const slug = formData.get('slug') as string;
+  const description = formData.get('description') as string;
+
+  if (!name || !slug || !description) {
+    return { error: 'Please fill in all required fields.' };
+  }
+
+  try {
+    const slugExists = await prisma.family.findUnique({ where: { slug } });
+    if (slugExists) return { error: 'A family with this slug already exists.' };
+
+    await prisma.family.create({
+      data: { name, slug: slug.toLowerCase().trim(), description },
+    });
+  } catch (error: any) {
+    return { error: error.message || 'Failed to create family.' };
+  }
+
+  redirect('/cms');
+}
+
+// 4. Create Disease Indication Action
+export async function createDiseaseAction(prevState: any, formData: FormData) {
+  const session = await auth();
+  const userId = session?.user?.id;
+  if (!userId) {
+    return { error: 'Unauthorized. Please sign in.' };
+  }
+
+  const name = formData.get('name') as string;
+  const slug = formData.get('slug') as string;
+  const description = formData.get('description') as string;
+
+  if (!name || !slug || !description) {
+    return { error: 'Please fill in all required fields.' };
+  }
+
+  try {
+    const slugExists = await prisma.disease.findUnique({ where: { slug } });
+    if (slugExists) return { error: 'A disease with this slug already exists.' };
+
+    await prisma.disease.create({
+      data: { name, slug: slug.toLowerCase().trim(), description },
+    });
+  } catch (error: any) {
+    return { error: error.message || 'Failed to create disease.' };
   }
 
   redirect('/cms');
