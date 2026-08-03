@@ -9,8 +9,13 @@ import Breadcrumbs from '@/components/shared/Breadcrumbs';
 import { Leaf, FileText, Bookmark, HelpCircle, ShieldAlert } from 'lucide-react';
 
 export async function generateStaticParams() {
-  const plants = await prisma.plant.findMany({ select: { slug: true } });
-  return plants.map((p) => ({ slug: p.slug }));
+  try {
+    const plants = await prisma.plant.findMany({ select: { slug: true } });
+    return plants.map((p) => ({ slug: p.slug }));
+  } catch (error) {
+    console.warn('⚠️ generateStaticParams DB lookup skipped during build:', error);
+    return [];
+  }
 }
 
 export const revalidate = 86400; // ISR for 24 hours

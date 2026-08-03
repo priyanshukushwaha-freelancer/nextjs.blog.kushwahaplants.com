@@ -11,11 +11,16 @@ import { User, Calendar, Leaf } from 'lucide-react';
 export const revalidate = 86400; // 24 hours caching (ISR)
 
 export async function generateStaticParams() {
-  const posts = await prisma.post.findMany({
-    where: { status: 'PUBLISHED' },
-    select: { slug: true },
-  });
-  return posts.map((p) => ({ slug: p.slug }));
+  try {
+    const posts = await prisma.post.findMany({
+      where: { status: 'PUBLISHED' },
+      select: { slug: true },
+    });
+    return posts.map((p) => ({ slug: p.slug }));
+  } catch (error) {
+    console.warn('⚠️ generateStaticParams DB lookup skipped during build:', error);
+    return [];
+  }
 }
 
 interface PageProps {
@@ -24,9 +29,14 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const resolvedParams = await params;
-  const post = await prisma.post.findUnique({
-    where: { slug: resolvedParams.slug },
-  });
+  let post = null;
+  try {
+    post = await prisma.post.findUnique({
+      where: { slug: resolvedParams.slug },
+    });
+  } catch (e) {
+    // DB connection fallback
+  }
 
   if (!post) return {};
 
@@ -48,26 +58,45 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function BlogPostPage({ params }: PageProps) {
   const resolvedParams = await params;
-  const post = await prisma.post.findUnique({
-    where: { slug: resolvedParams.slug },
-    include: {
-      author: {
-        select: { name: true, image: true, email: true },
-      },
-      plants: {
-        include: {
-          plant: {
-            select: {
-              id: true,
-              slug: true,
-              englishName: true,
-              scientificName: true,
+  let post = null;
+  let connectionError = false;
+
+  try {
+    post = await prisma.post.findUnique({
+      where: { slug: resolvedParams.slug },
+      include: {
+        author: {
+          select: { name: true, image: true, email: true },
+        },
+        plants: {
+          include: {
+            plant: {
+              select: {
+                id: true,
+                slug: true,
+                englishName: true,
+                scientificName: true,
+              },
             },
           },
         },
       },
-    },
-  });
+    });
+  } catch (error) {
+    console.error('Database connection error in blog post details page:', error);
+    connectionError = true;
+  }
+
+  if (connectionError) {
+    return (
+      <div className="mx-auto w-full max-w-xl px-6 py-20 text-center font-sans space-y-4">
+        <h1 className="text-lg font-semibold text-[var(--foreground)]">Botanical Base is Temporarily Busy</h1>
+        <p className="text-xs text-[var(--muted-foreground)] leading-relaxed max-w-sm mx-auto">
+          Our database is experiencing a high volume of requests. Please reload the page to refresh.
+        </p>
+      </div>
+    );
+  }
 
   if (!post || post.status !== 'PUBLISHED') notFound();
 

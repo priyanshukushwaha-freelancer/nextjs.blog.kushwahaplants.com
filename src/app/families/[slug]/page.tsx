@@ -8,8 +8,13 @@ import { Leaf, ShieldAlert } from 'lucide-react';
 export const revalidate = 86400;
 
 export async function generateStaticParams() {
-  const families = await prisma.family.findMany({ select: { slug: true } });
-  return families.map((f) => ({ slug: f.slug }));
+  try {
+    const families = await prisma.family.findMany({ select: { slug: true } });
+    return families.map((f) => ({ slug: f.slug }));
+  } catch (error) {
+    console.warn('⚠️ generateStaticParams DB lookup skipped during build:', error);
+    return [];
+  }
 }
 
 interface PageProps {

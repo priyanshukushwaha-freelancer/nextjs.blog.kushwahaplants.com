@@ -5,6 +5,9 @@ import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
 import { PublishStatus } from '@prisma/client';
 import sharp from 'sharp';
+import { promises as fs } from 'fs';
+import path from 'path';
+import { checkRateLimit } from '@/lib/rate-limit';
 
 // Convert plain text into structured Tiptap JSON blocks
 function textToTiptapJson(text: string) {
@@ -23,24 +26,64 @@ function textToTiptapJson(text: string) {
   };
 }
 
-// Process uploaded file and convert to WebP base64 using sharp (Vercel serverless friendly)
+// Magic bytes validation for safe image uploads
+function isValidImageMagicBytes(buffer: Buffer): boolean {
+  if (buffer.length < 4) return false;
+  // JPEG: FF D8 FF
+  if (buffer[0] === 0xFF && buffer[1] === 0xD8 && buffer[2] === 0xFF) return true;
+  // PNG: 89 50 4E 47
+  if (buffer[0] === 0x89 && buffer[1] === 0x50 && buffer[2] === 0x4E && buffer[3] === 0x47) return true;
+  // GIF: 47 49 46 38
+  if (buffer[0] === 0x47 && buffer[1] === 0x49 && buffer[2] === 0x46 && buffer[3] === 0x38) return true;
+  // RIFF/WEBP: 52 49 46 46
+  if (buffer[0] === 0x52 && buffer[1] === 0x49 && buffer[2] === 0x46 && buffer[3] === 0x46) return true;
+  return false;
+}
+
+// Process uploaded file and convert to WebP using sharp with security validation
 async function saveUploadedImage(file: File, plantName: string): Promise<string | null> {
   if (!file || file.size === 0) return null;
+
+  // Enforce 5MB limit
+  const MAX_SIZE = 5 * 1024 * 1024;
+  if (file.size > MAX_SIZE) {
+    throw new Error('Image file size exceeds the maximum limit of 5MB.');
+  }
+
   try {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
+
+    // Magic bytes security inspection
+    if (!isValidImageMagicBytes(buffer)) {
+      throw new Error('Invalid image file format. Only JPEG, PNG, WebP, and GIF images are allowed.');
+    }
     
-    // Resize and compress to WebP in memory
+    // Resize and compress to WebP buffer
     const webpBuffer = await sharp(buffer)
       .resize({ width: 800, height: 600, fit: 'cover' })
       .webp({ quality: 80 })
       .toBuffer();
 
-    const base64 = webpBuffer.toString('base64');
-    return `data:image/webp;base64,${base64}`;
-  } catch (err) {
-    console.error('⚠️ WebP conversion failed:', err);
-    return null;
+    const safeSlug = plantName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    const filename = `${safeSlug}-${Date.now()}.webp`;
+
+    // Attempt to write file to public/uploads/plants/ for CDN serving
+    try {
+      const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'plants');
+      await fs.mkdir(uploadDir, { recursive: true });
+      const filePath = path.join(uploadDir, filename);
+      await fs.writeFile(filePath, webpBuffer);
+      return `/uploads/plants/${filename}`;
+    } catch (fsErr) {
+      // In serverless environments where local disk is read-only, fallback to WebP data URI
+      console.warn('⚠️ Public uploads folder non-writable, falling back to compressed WebP data URI.');
+      const base64 = webpBuffer.toString('base64');
+      return `data:image/webp;base64,${base64}`;
+    }
+  } catch (err: any) {
+    console.error('⚠️ Image processing failed:', err.message || err);
+    throw err;
   }
 }
 
@@ -50,6 +93,12 @@ export async function createPostAction(prevState: any, formData: FormData) {
   const userId = session?.user?.id;
   if (!userId) {
     return { error: 'Unauthorized. Please sign in.' };
+  }
+
+  // Rate Limiting Check
+  const rateCheck = await checkRateLimit('create-post', 5, 60000);
+  if (!rateCheck.success) {
+    return { error: rateCheck.error };
   }
 
   const title = formData.get('title') as string;
@@ -112,12 +161,18 @@ export async function createPostAction(prevState: any, formData: FormData) {
   redirect('/cms');
 }
 
-// 2. Create Plant Profile Action (including local WebP upload, YouTube links, and FAQs)
+// 2. Create Plant Profile Action
 export async function createPlantAction(prevState: any, formData: FormData) {
   const session = await auth();
   const userId = session?.user?.id;
   if (!userId) {
     return { error: 'Unauthorized. Please sign in.' };
+  }
+
+  // Rate Limiting Check
+  const rateCheck = await checkRateLimit('create-plant', 5, 60000);
+  if (!rateCheck.success) {
+    return { error: rateCheck.error };
   }
 
   const englishName = formData.get('englishName') as string;
@@ -167,6 +222,12 @@ export async function createPlantAction(prevState: any, formData: FormData) {
       return { error: 'A plant profile with this slug already exists.' };
     }
 
+    // Process image file validation outside transaction
+    let savedPath: string | null = null;
+    if (imageFile && imageFile.size > 0) {
+      savedPath = await saveUploadedImage(imageFile, englishName);
+    }
+
     await prisma.$transaction(async (tx) => {
       // Create Plant
       const plant = await tx.plant.create({
@@ -184,20 +245,17 @@ export async function createPlantAction(prevState: any, formData: FormData) {
         },
       });
 
-      // Save uploaded image in WebP format
-      if (imageFile && imageFile.size > 0) {
-        const savedPath = await saveUploadedImage(imageFile, englishName);
-        if (savedPath) {
-          await tx.image.create({
-            data: {
-              url: savedPath,
-              altText: `${englishName} botanical plant profile illustration`,
-              width: 800,
-              height: 600,
-              plantId: plant.id,
-            },
-          });
-        }
+      // Save uploaded image URL
+      if (savedPath) {
+        await tx.image.create({
+          data: {
+            url: savedPath,
+            altText: `${englishName} botanical plant profile illustration`,
+            width: 800,
+            height: 600,
+            plantId: plant.id,
+          },
+        });
       }
 
       // Connect parts, indications, actions
@@ -254,6 +312,12 @@ export async function createFamilyAction(prevState: any, formData: FormData) {
     return { error: 'Unauthorized. Please sign in.' };
   }
 
+  // Rate Limiting Check
+  const rateCheck = await checkRateLimit('create-family', 5, 60000);
+  if (!rateCheck.success) {
+    return { error: rateCheck.error };
+  }
+
   const name = formData.get('name') as string;
   const slug = formData.get('slug') as string;
   const description = formData.get('description') as string;
@@ -282,6 +346,12 @@ export async function createDiseaseAction(prevState: any, formData: FormData) {
   const userId = session?.user?.id;
   if (!userId) {
     return { error: 'Unauthorized. Please sign in.' };
+  }
+
+  // Rate Limiting Check
+  const rateCheck = await checkRateLimit('create-disease', 5, 60000);
+  if (!rateCheck.success) {
+    return { error: rateCheck.error };
   }
 
   const name = formData.get('name') as string;
