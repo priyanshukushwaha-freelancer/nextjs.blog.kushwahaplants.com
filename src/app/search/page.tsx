@@ -5,7 +5,21 @@ import Breadcrumbs from '@/components/shared/Breadcrumbs';
 import Link from 'next/link';
 import { Leaf, BookOpen, Filter } from 'lucide-react';
 
+import type { Metadata } from 'next';
+
 export const dynamic = 'force-dynamic';
+
+export const metadata: Metadata = {
+  title: 'Enterprise Search - Kushwaha Plants',
+  description: 'Search medicinal plants, Ayurvedic profiles, taxonomic families, and clinical publications.',
+  alternates: {
+    canonical: '/search',
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
+};
 
 interface SearchPageProps {
   searchParams: Promise<{

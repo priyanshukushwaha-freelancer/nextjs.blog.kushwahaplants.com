@@ -52,16 +52,29 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const title = `${plant.englishName} (${plant.scientificName}) - Medical & Ayurvedic Guide`;
   const description = `Read about ${plant.englishName} (${plant.scientificName}), taxonomy family ${plant.family.name}. Includes Ayurvedic properties, therapeutic indications, and scientific citations.`;
 
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://blog-kushwahaplants-com.vercel.app';
+  const pageUrl = `${baseUrl}/plants/${plant.slug}`;
+
   return {
     title,
     description,
+    alternates: {
+      canonical: pageUrl,
+      languages: {
+        'en-IN': pageUrl,
+        'hi-IN': pageUrl,
+        'sa-IN': pageUrl,
+      },
+    },
     openGraph: {
       title,
       description,
       type: 'article',
-      url: `/plants/${plant.slug}`,
+      url: pageUrl,
+      siteName: 'Kushwaha Plants',
     },
     twitter: {
+      card: 'summary_large_image',
       title,
       description,
     },
@@ -108,12 +121,26 @@ export default async function PlantProfilePage({ params }: PageProps) {
     dosha?: string[];
   } | null;
 
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://blog-kushwahaplants-com.vercel.app';
+  const firstImage = plant.images && plant.images.length > 0 && !plant.images[0].url.startsWith('data:')
+    ? plant.images[0].url.startsWith('http') ? plant.images[0].url : `${baseUrl}${plant.images[0].url}`
+    : null;
+
   // JSON-LD structured schema for SEO
   const jsonLd: any = {
     '@context': 'https://schema.org',
     '@type': 'MedicalWebPage',
     name: plant.englishName,
     description: plant.description,
+    url: `${baseUrl}/plants/${plant.slug}`,
+    ...(firstImage ? {
+      primaryImageOfPage: {
+        '@type': 'ImageObject',
+        url: firstImage,
+        caption: `${plant.englishName} botanical illustration`,
+      },
+      image: firstImage,
+    } : {}),
     about: {
       '@type': 'Taxon',
       name: plant.scientificName,

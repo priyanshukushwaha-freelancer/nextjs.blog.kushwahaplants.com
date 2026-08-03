@@ -26,25 +26,52 @@ export default function Breadcrumbs() {
     return { href, label, isLast };
   });
 
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://blog-kushwahaplants-com.vercel.app';
+
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: 'Home',
+        item: baseUrl,
+      },
+      ...breadcrumbs.map((crumb, idx) => ({
+        '@type': 'ListItem',
+        position: idx + 2,
+        name: crumb.label,
+        item: `${baseUrl}${crumb.href}`,
+      })),
+    ],
+  };
+
   return (
-    <nav className="flex items-center gap-1.5 text-xs text-[var(--muted-foreground)] font-sans py-4" aria-label="Breadcrumb">
-      <Link href="/" className="hover:text-[var(--foreground)] transition-colors">
-        Home
-      </Link>
-      {breadcrumbs.map((crumb, idx) => (
-        <span key={crumb.href} className="flex items-center gap-1.5">
-          <ChevronRight className="h-3 w-3 shrink-0" />
-          {crumb.isLast ? (
-            <span className="text-[var(--foreground)] font-medium" aria-current="page">
-              {crumb.label}
-            </span>
-          ) : (
-            <Link href={crumb.href} className="hover:text-[var(--foreground)] transition-colors">
-              {crumb.label}
-            </Link>
-          )}
-        </span>
-      ))}
-    </nav>
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <nav className="flex items-center gap-1.5 text-xs text-[var(--muted-foreground)] font-sans py-4" aria-label="Breadcrumb">
+        <Link href="/" className="hover:text-[var(--foreground)] transition-colors">
+          Home
+        </Link>
+        {breadcrumbs.map((crumb, idx) => (
+          <span key={crumb.href} className="flex items-center gap-1.5">
+            <ChevronRight className="h-3 w-3 shrink-0" />
+            {crumb.isLast ? (
+              <span className="text-[var(--foreground)] font-medium" aria-current="page">
+                {crumb.label}
+              </span>
+            ) : (
+              <Link href={crumb.href} className="hover:text-[var(--foreground)] transition-colors">
+                {crumb.label}
+              </Link>
+            )}
+          </span>
+        ))}
+      </nav>
+    </>
   );
 }
