@@ -5,8 +5,16 @@ import { GitCommit, ArrowRight } from 'lucide-react';
 
 export const revalidate = 3600;
 
+interface FamilyListItem {
+  id: string;
+  slug: string;
+  name: string;
+  description: string;
+  _count?: { plants: number };
+}
+
 export default async function FamiliesIndexPage() {
-  let families: any[] = [];
+  let families: FamilyListItem[] = [];
 
   try {
     families = await prisma.family.findMany({

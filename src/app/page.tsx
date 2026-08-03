@@ -4,10 +4,26 @@ import { Leaf, Search, ArrowRight, BookOpen, GitCommit, ShieldAlert, Sparkles } 
 
 export const revalidate = 3600; // Cache for 1 hour (ISR)
 
+interface FeaturedPlant {
+  id: string;
+  slug: string;
+  scientificName: string;
+  englishName: string;
+  family: { name: string };
+}
+
+interface FeaturedPost {
+  id: string;
+  slug: string;
+  title: string;
+  excerpt: string;
+  createdAt: Date;
+}
+
 export default async function HomePage() {
   // Fetch high-level stats & featured items
-  let plants: any[] = [];
-  let posts: any[] = [];
+  let plants: FeaturedPlant[] = [];
+  let posts: FeaturedPost[] = [];
   let familiesCount = 0;
   let diseasesCount = 0;
 

@@ -5,8 +5,17 @@ import { BookOpen, User, Calendar } from 'lucide-react';
 
 export const revalidate = 3600;
 
+interface PostFeedItem {
+  id: string;
+  slug: string;
+  title: string;
+  excerpt: string;
+  createdAt: Date;
+  author: { name: string | null; image: string | null };
+}
+
 export default async function BlogFeedPage() {
-  let posts: any[] = [];
+  let posts: PostFeedItem[] = [];
   try {
     posts = await prisma.post.findMany({
       where: { status: 'PUBLISHED' },

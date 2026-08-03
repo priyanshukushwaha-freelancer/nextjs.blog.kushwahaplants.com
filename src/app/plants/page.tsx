@@ -5,6 +5,16 @@ import { Leaf } from 'lucide-react';
 
 export const revalidate = 3600;
 
+interface PlantDirectoryItem {
+  id: string;
+  slug: string;
+  scientificName: string;
+  englishName: string;
+  hindiName: string | null;
+  sanskritName: string | null;
+  family: { name: string };
+}
+
 export default async function PlantsDirectoryPage({
   searchParams,
 }: {
@@ -14,7 +24,7 @@ export default async function PlantsDirectoryPage({
   const activeLetter = resolvedSearchParams.letter?.toUpperCase() || '';
 
   // Get all plants
-  let plants: any[] = [];
+  let plants: PlantDirectoryItem[] = [];
   try {
     plants = await prisma.plant.findMany({
       orderBy: { englishName: 'asc' },

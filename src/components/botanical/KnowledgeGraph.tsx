@@ -15,7 +15,7 @@ export default function KnowledgeGraph({ data }: KnowledgeGraphProps) {
   const plantNode = data.nodes.find((n) => n.type === 'plant');
   if (!plantNode) return null;
 
-  // Position surrounding nodes in a circle around the center
+  // Position surrounding nodes in a circle around center (500x500 viewBox coordinates)
   const center = { x: 250, y: 250 };
   const radius = 160;
   const surroundingNodes = data.nodes.filter((n) => n.type !== 'plant');
@@ -40,22 +40,26 @@ export default function KnowledgeGraph({ data }: KnowledgeGraphProps) {
   const getColorClass = (type: string) => {
     switch (type) {
       case 'family':
-        return 'text-blue-500 bg-blue-500/10 border-blue-500/30';
+        return 'text-blue-600 dark:text-blue-400 bg-blue-500/10 border-blue-500/30';
       case 'disease':
-        return 'text-red-500 bg-red-500/10 border-red-500/30';
+        return 'text-red-600 dark:text-red-400 bg-red-500/10 border-red-500/30';
       case 'action':
-        return 'text-[var(--ring)] bg-[var(--ring)]/10 border-[var(--ring)]/30';
+        return 'text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 border-emerald-500/30';
       case 'part':
-        return 'text-emerald-500 bg-emerald-500/10 border-emerald-500/30';
+        return 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border-emerald-500/30';
       case 'research':
-        return 'text-purple-500 bg-purple-500/10 border-purple-500/30';
+        return 'text-purple-600 dark:text-purple-400 bg-purple-500/10 border-purple-500/30';
       default:
         return 'text-[var(--muted)] bg-[var(--border)] border-[var(--border)]';
     }
   };
 
   return (
-    <div className="border border-[var(--border)] rounded-2xl bg-[var(--card)] p-6 space-y-6">
+    <div
+      role="region"
+      aria-label="Interactive Botanical Knowledge Graph"
+      className="border border-[var(--border)] rounded-2xl bg-[var(--card)] p-6 space-y-6"
+    >
       <div className="flex items-center justify-between">
         <div className="space-y-1">
           <h3 className="font-sans text-sm font-semibold tracking-tight">Interactive Knowledge Graph</h3>
@@ -65,8 +69,8 @@ export default function KnowledgeGraph({ data }: KnowledgeGraphProps) {
       </div>
 
       <div className="relative w-full aspect-square max-w-[500px] mx-auto overflow-hidden">
-        {/* SVG Connections Layer */}
-        <svg className="absolute inset-0 w-full h-full pointer-events-none">
+        {/* SVG Connections Layer with ViewBox */}
+        <svg viewBox="0 0 500 500" className="absolute inset-0 w-full h-full pointer-events-none">
           {surroundingNodes.map((node, index) => {
             const angle = (index * 2 * Math.PI) / surroundingNodes.length;
             const x = center.x + radius * Math.cos(angle);
@@ -81,7 +85,7 @@ export default function KnowledgeGraph({ data }: KnowledgeGraphProps) {
                   y2={y}
                   stroke="currentColor"
                   strokeWidth="1.5"
-                  className="text-[var(--border)] stroke-dasharray-[4] animate-[dash_10s_linear_infinite]"
+                  className="text-[var(--border)] stroke-dasharray-[4]"
                 />
               </g>
             );
@@ -90,15 +94,17 @@ export default function KnowledgeGraph({ data }: KnowledgeGraphProps) {
 
         {/* Center Plant Node */}
         <button
+          type="button"
           onClick={() => setSelectedNode(plantNode)}
-          className="absolute z-10 w-24 h-24 rounded-full flex flex-col items-center justify-center p-3 text-center border-2 border-[var(--ring)] bg-[var(--background)] shadow-lg hover:scale-105 transition-all"
+          aria-label={`Central plant node: ${plantNode.label}`}
+          className="absolute z-10 w-[19.2%] h-[19.2%] rounded-full flex flex-col items-center justify-center p-2 text-center border-2 border-[var(--ring)] bg-[var(--background)] shadow-lg hover:scale-105 transition-all"
           style={{
-            left: `${center.x - 48}px`,
-            top: `${center.y - 48}px`,
+            left: `${((center.x - 48) / 500) * 100}%`,
+            top: `${((center.y - 48) / 500) * 100}%`,
           }}
         >
-          <Leaf className="h-6 w-6 text-[var(--ring)] mb-1" />
-          <span className="text-[10px] font-semibold leading-tight line-clamp-2">
+          <Leaf className="h-5 w-5 text-[var(--ring)] mb-0.5" />
+          <span className="text-[9px] sm:text-[10px] font-semibold leading-tight line-clamp-2">
             {plantNode.label.split(' (')[0]}
           </span>
         </button>
@@ -114,11 +120,13 @@ export default function KnowledgeGraph({ data }: KnowledgeGraphProps) {
           return (
             <button
               key={node.id}
+              type="button"
               onClick={() => setSelectedNode(node)}
-              className={`absolute z-10 w-12 h-12 rounded-full border flex items-center justify-center shadow-md hover:scale-110 transition-all ${colorClasses}`}
+              aria-label={`${node.type} node: ${node.label}`}
+              className={`absolute z-10 w-[9.6%] h-[9.6%] rounded-full border flex items-center justify-center shadow-md hover:scale-110 transition-all ${colorClasses}`}
               style={{
-                left: `${x - 24}px`,
-                top: `${y - 24}px`,
+                left: `${((x - 24) / 500) * 100}%`,
+                top: `${((y - 24) / 500) * 100}%`,
               }}
               title={node.label}
             >

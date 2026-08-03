@@ -5,8 +5,16 @@ import { ShieldAlert, ArrowRight } from 'lucide-react';
 
 export const revalidate = 3600;
 
+interface DiseaseListItem {
+  id: string;
+  slug: string;
+  name: string;
+  description: string;
+  _count?: { plants: number };
+}
+
 export default async function DiseasesIndexPage() {
-  let diseases: any[] = [];
+  let diseases: DiseaseListItem[] = [];
 
   try {
     diseases = await prisma.disease.findMany({
