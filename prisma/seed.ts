@@ -1,9 +1,12 @@
 import { PrismaClient, Role, PublishStatus } from '@prisma/client';
+import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
 async function main() {
   console.log('Seeding database...');
+
+  const passwordHash = bcrypt.hashSync('admin123', 10);
 
   // 1. Create Users
   const superadmin = await prisma.user.upsert({
@@ -13,7 +16,7 @@ async function main() {
       email: 'admin@kushwahaplants.com',
       name: 'Dr. P. K. Kushwaha',
       role: Role.SUPERADMIN,
-      passwordHash: '$2b$12$KkQ1bKkQ1bKkQ1bKkQ1bKe4pE9vJkZp2qjQ1bKkQ1bKkQ1bKkQ1bK', // dummy hash
+      passwordHash,
     },
   });
 
@@ -24,7 +27,7 @@ async function main() {
       email: 'author@kushwahaplants.com',
       name: 'Shastri Govind Lal',
       role: Role.AUTHOR,
-      passwordHash: '$2b$12$KkQ1bKkQ1bKkQ1bKkQ1bKe4pE9vJkZp2qjQ1bKkQ1bKkQ1bKkQ1bK', // dummy hash
+      passwordHash,
     },
   });
 
