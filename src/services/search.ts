@@ -51,11 +51,11 @@ export async function searchPlatform(query: string, filters?: {
         // Full text search
         {
           OR: [
-            { scientificName: { search: ftsQuery, mode: 'insensitive' } },
-            { englishName: { search: ftsQuery, mode: 'insensitive' } },
-            { hindiName: { search: ftsQuery, mode: 'insensitive' } },
-            { sanskritName: { search: ftsQuery, mode: 'insensitive' } },
-            { description: { search: ftsQuery, mode: 'insensitive' } },
+            { scientificName: { search: ftsQuery } },
+            { englishName: { search: ftsQuery } },
+            { hindiName: { search: ftsQuery } },
+            { sanskritName: { search: ftsQuery } },
+            { description: { search: ftsQuery } },
           ],
         },
         // Taxonomic Filters
@@ -130,8 +130,8 @@ export async function searchPlatform(query: string, filters?: {
         { status: 'PUBLISHED' },
         {
           OR: [
-            { title: { search: ftsQuery, mode: 'insensitive' } },
-            { excerpt: { search: ftsQuery, mode: 'insensitive' } },
+            { title: { search: ftsQuery } },
+            { excerpt: { search: ftsQuery } },
           ],
         },
       ],

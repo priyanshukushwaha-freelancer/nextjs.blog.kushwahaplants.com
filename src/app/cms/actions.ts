@@ -5,8 +5,6 @@ import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
 import { PublishStatus } from '@prisma/client';
 import sharp from 'sharp';
-import { promises as fs } from 'fs';
-import path from 'path';
 
 // Convert plain text into structured Tiptap JSON blocks
 function textToTiptapJson(text: string) {

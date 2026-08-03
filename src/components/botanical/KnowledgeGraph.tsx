@@ -137,9 +137,9 @@ export default function KnowledgeGraph({ data }: KnowledgeGraphProps) {
               {selectedNode.type.toUpperCase()}
             </span>
             <h4 className="font-sans text-xs font-semibold">{selectedNode.label}</h4>
-            {selectedNode.slug && selectedNode.type !== 'plant' ? (
+            {selectedNode.slug && (selectedNode.type === 'family' || selectedNode.type === 'disease') ? (
               <Link
-                href={`/${selectedNode.type === 'action' ? 'uses' : selectedNode.type + 's'}/${selectedNode.slug}`}
+                href={`/${selectedNode.type === 'family' ? 'families' : 'diseases'}/${selectedNode.slug}`}
                 className="text-[10px] text-[var(--ring)] hover:underline font-medium"
               >
                 Explore all plants related to this →

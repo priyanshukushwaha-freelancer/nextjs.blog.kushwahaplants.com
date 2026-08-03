@@ -1,6 +1,7 @@
 import NextAuth from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
 import prisma from '@/lib/prisma';
+import bcrypt from 'bcryptjs';
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
@@ -19,11 +20,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           where: { email: credentials.email as string },
         });
 
-        // In a real application, use bcrypt/argon2 to compare password hashes.
-        // For security in production, this is a placeholder check.
         if (user && user.passwordHash) {
-          // Simple string match check for prototype (in seed, dummy passwordHash is set)
-          const isValid = credentials.password === 'admin123' || user.passwordHash === credentials.password;
+          const isValid = await bcrypt.compare(
+            credentials.password as string,
+            user.passwordHash
+          );
           if (isValid) {
             return {
               id: user.id,

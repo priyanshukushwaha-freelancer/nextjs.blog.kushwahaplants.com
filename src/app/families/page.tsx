@@ -70,4 +70,3 @@ export default async function FamiliesIndexPage() {
     </div>
   );
 }
-export const dynamic = 'force-dynamic';

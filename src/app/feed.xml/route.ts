@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 
 export async function GET() {
-  const baseUrl = 'https://nextjs.blog.kushwahaplants.com'; // Read from env/headers in prod
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://blog-kushwahaplants-com.vercel.app';
 
   let posts: any[] = [];
   try {

@@ -25,7 +25,7 @@ export const metadata: Metadata = {
     template: '%s | Kushwaha Plants',
   },
   description: 'India\'s premier botanical research base and publishing platform for Medicinal Plants, Ayurvedic energetics, and clinical research citations.',
-  metadataBase: new URL('http://localhost:3000'), // updated on deploy
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'),
   alternates: {
     canonical: '/',
   },

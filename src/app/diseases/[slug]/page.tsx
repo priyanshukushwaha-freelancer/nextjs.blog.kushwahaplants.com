@@ -7,6 +7,11 @@ import { Leaf, ShieldAlert } from 'lucide-react';
 
 export const revalidate = 86400;
 
+export async function generateStaticParams() {
+  const diseases = await prisma.disease.findMany({ select: { slug: true } });
+  return diseases.map((d) => ({ slug: d.slug }));
+}
+
 interface PageProps {
   params: Promise<{ slug: string }>;
 }

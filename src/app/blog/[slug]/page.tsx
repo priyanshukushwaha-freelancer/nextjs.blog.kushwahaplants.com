@@ -10,6 +10,14 @@ import { User, Calendar, Leaf } from 'lucide-react';
 
 export const revalidate = 86400; // 24 hours caching (ISR)
 
+export async function generateStaticParams() {
+  const posts = await prisma.post.findMany({
+    where: { status: 'PUBLISHED' },
+    select: { slug: true },
+  });
+  return posts.map((p) => ({ slug: p.slug }));
+}
+
 interface PageProps {
   params: Promise<{ slug: string }>;
 }

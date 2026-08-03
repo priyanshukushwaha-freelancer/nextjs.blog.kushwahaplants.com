@@ -1,13 +1,32 @@
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import Image from 'next/image';
 import prisma from '@/lib/prisma';
 import { getPlantGraphData, getCachedPlantBySlug } from '@/services/graph';
 import KnowledgeGraph from '@/components/botanical/KnowledgeGraph';
 import Breadcrumbs from '@/components/shared/Breadcrumbs';
 import { Leaf, FileText, Bookmark, HelpCircle, ShieldAlert } from 'lucide-react';
 
+export async function generateStaticParams() {
+  const plants = await prisma.plant.findMany({ select: { slug: true } });
+  return plants.map((p) => ({ slug: p.slug }));
+}
+
 export const revalidate = 86400; // ISR for 24 hours
+
+function extractYouTubeId(url: string): string | null {
+  try {
+    const u = new URL(url);
+    if (u.hostname === 'youtu.be') return u.pathname.slice(1);
+    if (u.searchParams.has('v')) return u.searchParams.get('v');
+    if (u.pathname.startsWith('/embed/')) return u.pathname.split('/')[2];
+  } catch {
+    const match = url.match(/(?:youtube\.com\/(?:[^/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?/\s]{11})/i);
+    if (match) return match[1];
+  }
+  return null;
+}
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -85,7 +104,7 @@ export default async function PlantProfilePage({ params }: PageProps) {
   } | null;
 
   // JSON-LD structured schema for SEO
-  const jsonLd = {
+  const jsonLd: any = {
     '@context': 'https://schema.org',
     '@type': 'MedicalWebPage',
     name: plant.englishName,
@@ -101,6 +120,31 @@ export default async function PlantProfilePage({ params }: PageProps) {
     aspect: ['Ayurveda Properties', 'Medicinal Action', 'Indications', 'Clinical Studies'],
   };
 
+  // FAQ structured data for Google rich snippets
+  const faqJsonLd = plant.faqs.length > 0 ? {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: plant.faqs.map((faq: any) => ({
+      '@type': 'Question',
+      name: faq.question,
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: faq.answer,
+      },
+    })),
+  } : null;
+
+  // Video structured data for video search indexing
+  const videos = plant.videos as Array<{ url: string; title: string }> | null;
+  const videoJsonLd = videos && videos.length > 0 ? videos.map((v) => ({
+    '@context': 'https://schema.org',
+    '@type': 'VideoObject',
+    name: v.title,
+    url: v.url,
+    thumbnailUrl: `https://img.youtube.com/vi/${extractYouTubeId(v.url)}/hqdefault.jpg`,
+    uploadDate: plant.createdAt,
+  })).filter((v) => v.thumbnailUrl.indexOf('null') === -1) : null;
+
   return (
     <div className="mx-auto w-full max-w-7xl px-6 lg:px-8 py-10 space-y-12">
       {/* JSON-LD Schema Injection */}
@@ -108,6 +152,19 @@ export default async function PlantProfilePage({ params }: PageProps) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
+      {faqJsonLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+        />
+      )}
+      {videoJsonLd && videoJsonLd.map((vld, i) => (
+        <script
+          key={i}
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(vld) }}
+        />
+      ))}
 
       <div className="space-y-4">
         <Breadcrumbs />
@@ -142,6 +199,20 @@ export default async function PlantProfilePage({ params }: PageProps) {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 items-start">
         {/* Main Content */}
         <div className="lg:col-span-2 space-y-10">
+          {/* Plant Image */}
+          {plant.images && plant.images.length > 0 && !plant.images[0].url.startsWith('data:') && (
+            <div className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden border border-[var(--border)] bg-[var(--card)]">
+              <Image
+                src={plant.images[0].url}
+                alt={plant.images[0].altText || `${plant.englishName} botanical illustration`}
+                fill
+                className="object-cover"
+                sizes="(max-width: 768px) 100vw, 66vw"
+                priority
+              />
+            </div>
+          )}
+
           {/* Scientific Description */}
           <section className="space-y-3">
             <h2 className="font-sans text-lg font-semibold tracking-tight text-[var(--foreground)]">

@@ -70,4 +70,3 @@ export default async function DiseasesIndexPage() {
     </div>
   );
 }
-export const dynamic = 'force-dynamic';

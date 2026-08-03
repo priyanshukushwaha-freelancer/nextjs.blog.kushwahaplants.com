@@ -5,7 +5,12 @@ import Breadcrumbs from '@/components/shared/Breadcrumbs';
 import Link from 'next/link';
 import { Leaf, ShieldAlert } from 'lucide-react';
 
-export const revalidate = 86400;
+export const revalidate = 86400;\r
+\r
+export async function generateStaticParams() {\r
+  const families = await prisma.family.findMany({ select: { slug: true } });\r
+  return families.map((f) => ({ slug: f.slug }));\r
+}
 
 interface PageProps {
   params: Promise<{ slug: string }>;
