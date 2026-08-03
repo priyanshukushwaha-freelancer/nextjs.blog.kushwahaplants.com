@@ -217,7 +217,10 @@ export async function createPlantAction(prevState: any, formData: FormData) {
   const actions = formData.getAll('actions') as string[];
 
   // Image Upload File
+  // Image Upload File & Fallback URL
   const imageFile = formData.get('imageFile') as File;
+  const imageUrl = formData.get('imageUrl') as string;
+  const imageAlt = formData.get('imageAlt') as string;
 
   if (!englishName || !scientificName || !slug || !description || !familyId) {
     return { error: 'Please fill in all required fields.' };
@@ -232,7 +235,13 @@ export async function createPlantAction(prevState: any, formData: FormData) {
     // Process image file validation outside transaction
     let savedPath: string | null = null;
     if (imageFile && imageFile.size > 0) {
-      savedPath = await saveUploadedImage(imageFile, englishName);
+      try {
+        savedPath = await saveUploadedImage(imageFile, englishName);
+      } catch (imgErr: any) {
+        return { error: imgErr.message || 'Image processing failed.' };
+      }
+    } else if (imageUrl && imageUrl.trim() !== '') {
+      savedPath = imageUrl.trim();
     }
 
     await prisma.$transaction(async (tx) => {
@@ -257,7 +266,7 @@ export async function createPlantAction(prevState: any, formData: FormData) {
         await tx.image.create({
           data: {
             url: savedPath,
-            altText: `${englishName} botanical plant profile illustration`,
+            altText: imageAlt || `${englishName} botanical plant profile illustration`,
             width: 800,
             height: 600,
             plantId: plant.id,
