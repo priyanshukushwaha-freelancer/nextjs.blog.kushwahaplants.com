@@ -121,12 +121,19 @@ export async function createPostAction(prevState: any, formData: FormData) {
     }
 
     await prisma.$transaction(async (tx) => {
+      let structuredContent: any;
+      try {
+        structuredContent = JSON.parse(rawContent);
+      } catch {
+        structuredContent = textToTiptapJson(rawContent);
+      }
+
       const newPost = await tx.post.create({
         data: {
           title,
           slug: slug.toLowerCase().trim(),
           excerpt,
-          content: textToTiptapJson(rawContent),
+          content: structuredContent,
           status,
           seoTitle: seoTitle || title,
           seoDesc: seoDesc || excerpt,
@@ -373,5 +380,94 @@ export async function createDiseaseAction(prevState: any, formData: FormData) {
     return { error: error.message || 'Failed to create disease.' };
   }
 
+  redirect('/cms');
+}
+
+// 5. Create Plant Part Action
+export async function createPartAction(prevState: any, formData: FormData) {
+  const session = await auth();
+  if (!session?.user?.id) return { error: 'Unauthorized.' };
+
+  const rateCheck = await checkRateLimit('create-part', 5, 60000);
+  if (!rateCheck.success) return { error: rateCheck.error };
+
+  const name = formData.get('name') as string;
+  const slug = formData.get('slug') as string;
+  const description = formData.get('description') as string;
+
+  if (!name || !slug) return { error: 'Please fill in all required fields.' };
+
+  try {
+    const slugExists = await prisma.plantPart.findUnique({ where: { slug } });
+    if (slugExists) return { error: 'A plant part with this slug already exists.' };
+
+    await prisma.plantPart.create({
+      data: { name, slug: slug.toLowerCase().trim(), description: description || null },
+    });
+  } catch (error: any) {
+    return { error: error.message || 'Failed to create plant part.' };
+  }
+
+  redirect('/cms');
+}
+
+// 6. Create Medicinal Action Action
+export async function createActionAction(prevState: any, formData: FormData) {
+  const session = await auth();
+  if (!session?.user?.id) return { error: 'Unauthorized.' };
+
+  const rateCheck = await checkRateLimit('create-action', 5, 60000);
+  if (!rateCheck.success) return { error: rateCheck.error };
+
+  const name = formData.get('name') as string;
+  const slug = formData.get('slug') as string;
+  const description = formData.get('description') as string;
+
+  if (!name || !slug || !description) return { error: 'Please fill in all required fields.' };
+
+  try {
+    const slugExists = await prisma.medicinalAction.findUnique({ where: { slug } });
+    if (slugExists) return { error: 'A medicinal action with this slug already exists.' };
+
+    await prisma.medicinalAction.create({
+      data: { name, slug: slug.toLowerCase().trim(), description },
+    });
+  } catch (error: any) {
+    return { error: error.message || 'Failed to create medicinal action.' };
+  }
+
+  redirect('/cms');
+}
+
+// 7. Delete Actions
+export async function deletePostAction(id: string) {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error('Unauthorized.');
+
+  await prisma.post.delete({ where: { id } });
+  redirect('/cms');
+}
+
+export async function deletePlantAction(id: string) {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error('Unauthorized.');
+
+  await prisma.plant.delete({ where: { id } });
+  redirect('/cms');
+}
+
+export async function deleteFamilyAction(id: string) {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error('Unauthorized.');
+
+  await prisma.family.delete({ where: { id } });
+  redirect('/cms');
+}
+
+export async function deleteDiseaseAction(id: string) {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error('Unauthorized.');
+
+  await prisma.disease.delete({ where: { id } });
   redirect('/cms');
 }

@@ -84,10 +84,24 @@ export default async function CmsDashboardPage() {
           </Link>
           <Link
             href="/cms/new-disease"
-            className="flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold bg-purple-600 text-white hover:bg-purple-750 transition-all shadow-sm"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold bg-purple-600 text-white hover:bg-purple-700 transition-all shadow-sm"
           >
             <Plus className="h-4 w-4" />
             <span>Add Indication</span>
+          </Link>
+          <Link
+            href="/cms/new-part"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold bg-amber-600 text-white hover:bg-amber-700 transition-all shadow-sm"
+          >
+            <Plus className="h-4 w-4" />
+            <span>Add Part</span>
+          </Link>
+          <Link
+            href="/cms/new-action"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold bg-teal-600 text-white hover:bg-teal-700 transition-all shadow-sm"
+          >
+            <Plus className="h-4 w-4" />
+            <span>Add Action</span>
           </Link>
         </div>
       </div>

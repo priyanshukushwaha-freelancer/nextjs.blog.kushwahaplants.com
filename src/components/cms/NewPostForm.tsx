@@ -4,6 +4,7 @@ import { useActionState, useState } from 'react';
 import { createPostAction } from '@/app/cms/actions';
 import { ArrowLeft, Loader2, Sparkles } from 'lucide-react';
 import Link from 'next/link';
+import RichTextEditor from '@/components/cms/RichTextEditor';
 
 interface NewPostFormProps {
   plants: Array<{ id: string; englishName: string; scientificName: string }>;
@@ -100,14 +101,8 @@ export default function NewPostForm({ plants }: NewPostFormProps) {
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-[var(--foreground)]">Content Body (Markdown / Text) <span className="text-red-500">*</span></label>
-            <textarea
-              name="content"
-              rows={12}
-              required
-              placeholder="Write your article body here. Paragraphs will be structured automatically..."
-              className="w-full px-4 py-2 text-sm font-sans rounded-xl border border-[var(--border)] bg-[var(--card)] focus:outline-none focus:border-[var(--ring)] transition-all"
-            />
+            <label className="text-xs font-semibold text-[var(--foreground)]">Content Body (Rich Editor) <span className="text-red-500">*</span></label>
+            <RichTextEditor name="content" />
           </div>
         </div>
 
