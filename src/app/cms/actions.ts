@@ -3,6 +3,7 @@
 import prisma from '@/lib/prisma';
 import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
+import { revalidatePath } from 'next/cache';
 import { PublishStatus } from '@prisma/client';
 import sharp from 'sharp';
 import { promises as fs } from 'fs';
@@ -165,6 +166,8 @@ export async function createPostAction(prevState: any, formData: FormData) {
     return { error: error.message || 'Failed to create post.' };
   }
 
+  revalidatePath('/cms');
+  revalidatePath('/blog');
   redirect('/cms');
 }
 
